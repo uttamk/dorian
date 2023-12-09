@@ -48,6 +48,7 @@ def write(deployment_times: list[DeploymentTime], output_file):
         writer.writerows(
             [(dt.deployment_time.timestamp(), dt.first_commit_time.timestamp() if dt.first_commit_time else None) for dt
              in deployment_times])
+        click.echo('Metrics written to {}'.format(output_file))
 
 
 @click.command()

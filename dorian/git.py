@@ -3,6 +3,7 @@ import subprocess
 from dataclasses import dataclass
 from datetime import datetime
 import random
+from pathlib import Path
 
 
 @dataclass
@@ -60,9 +61,12 @@ class Git(object):
         return datetime.strptime(date_str, "%Y-%m-%d %H:%M:%S %z")
 
     @classmethod
-    def clone(cls, url: str, repo_dir: str = "."):
-        _run_command(f"""git clone {url} {repo_dir}""")
-        return Git(repo_dir=repo_dir)
+    def clone(cls, url: str):
+        repo_name = url.split("/")[-1].split(".")[0]
+        if Path(repo_name).is_dir():
+            _run_command(f"""rm -rf {repo_name}""")
+        _run_command(f"""git clone {url}""")
+        return Git(repo_dir=repo_name)
 
 
 def _run_command(cmd: str):
