@@ -1,7 +1,6 @@
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime
 
-from dorian.command import run_command
 from dorian.git import Git
 
 
@@ -11,20 +10,29 @@ class DeploymentTime:
     first_commit_time: datetime
 
 
-def _deployment_dates(tags: list[str]) -> list[datetime]:
-    date_strs = [tag.split("-")[-1] for tag in tags]
-    return [
-        datetime(year=int(date_str[0:4]),
-                 month=int(date_str[4:6]),
-                 day=int(date_str[6:8]),
-                 hour=int(date_str[8:10]),
-                 minute=int(date_str[10:12]),
-                 second=int(date_str[12:14]))
-        for date_str in date_strs
-    ]
+def _deployment_time(tag: str):
+    date_str = tag.split("-")[-1]
+
+    return datetime(year=int(date_str[0:4]),
+                    month=int(date_str[4:6]),
+                    day=int(date_str[6:8]),
+                    hour=int(date_str[8:10]),
+                    minute=int(date_str[10:12]),
+                    second=int(date_str[12:14]))
+
+
+def _first_commit_time(idx: int, git: Git) -> datetime or None:
+    if idx == 0:
+        return None
+    prev_tag = git.tags()[idx - 1]
+    prev_deployment_sha = git.rev_parse(prev_tag)
+    next_sha = git.next_sha(prev_deployment_sha)
+    return git.commit_time(next_sha)
 
 
 def extract(git: Git) -> list[DeploymentTime]:
-    tags = git.tags()
-    deployment_dates = _deployment_dates(tags)
-    return [DeploymentTime(date, None) for date in deployment_dates]
+    return [
+        DeploymentTime(deployment_time=_deployment_time(tag),
+                       first_commit_time=_first_commit_time(idx, git))
+        for idx, tag in enumerate(git.tags())
+    ]
