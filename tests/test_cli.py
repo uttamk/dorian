@@ -1,36 +1,18 @@
 import csv
-import random
-import string
 from datetime import datetime, timedelta
-from functools import reduce
 from pathlib import Path
-from unittest.mock import patch
+from unittest import mock
 
 from click.testing import CliRunner
 
-from dorian.cli import cli
+import dorian.cli as cli
 from dorian.command import run_command
+from dorian.git import Git
 
 repo_dir = "./test_repo"
 
 
-def commit_tag(date: datetime) -> str:
-    random_file = ''.join(random.choices(string.ascii_uppercase +
-                                         string.digits, k=5))
-    return f"""
-    cd {repo_dir}
-    touch {random_file}
-    git add {random_file}
-    git commit -m 'Add {random_file}'
-    git tag deploy-{date.strftime("%Y%m%d%H%M%S")}
-    """
-
-
-def commit_commands(deploy_tag_dates):
-    return reduce(lambda cmd, date: "\n".join([cmd, commit_tag(date)]), deploy_tag_dates, "")
-
-
-def setup_test_repo(deploy_tag_dates: list[datetime]):
+def setup_test_repo():
     run_command(f"""
     rm -rf {repo_dir}
     mkdir -p {repo_dir}
@@ -43,19 +25,20 @@ def setup_test_repo(deploy_tag_dates: list[datetime]):
     git -P tag
     """)
 
-    for date in deploy_tag_dates:
-        run_command(commit_tag(date))
 
-
-@patch('dorian.cli.clone')
-def test_cli(clone):
+def test_cli():
     today = datetime.now().replace(microsecond=0)
     yesterday = datetime.now().replace(microsecond=0) - timedelta(days=1)
+    setup_test_repo()
+    git = Git(repo_dir=repo_dir)
+    with mock.patch.object(cli.Git, "clone") as clone:
+        clone.return_value = git
+        for idx, date in enumerate([today, yesterday]):
+            sha = git.commit(date, f"Commit {idx}")
+            git.create_tag(f'deploy-{date.strftime("%Y%m%d%H%M%S")}', sha)
 
-    setup_test_repo(deploy_tag_dates=[today, yesterday])
-    runner = CliRunner()
-    clone.return_value = repo_dir
-    result = runner.invoke(cli, ["git@github.com:uttamk/dorian.git"])
+        runner = CliRunner()
+        result = runner.invoke(cli.cli, ["git@github.com:uttamk/dorian.git"])
 
     assert result.exit_code == 0
     assert Path('dora.csv').is_file()

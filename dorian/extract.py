@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 
 from dorian.command import run_command
+from dorian.git import Git
 
 
 @dataclass
@@ -23,14 +24,7 @@ def _deployment_dates(tags: list[str]) -> list[datetime]:
     ]
 
 
-def extract(repo_dir: str) -> list[DeploymentTime]:
-    tags = _tags(repo_dir)
+def extract(git: Git) -> list[DeploymentTime]:
+    tags = git.tags()
     deployment_dates = _deployment_dates(tags)
     return [DeploymentTime(date, None) for date in deployment_dates]
-
-
-def _tags(repo_dir: str) -> list[str]:
-    tag_bytes = run_command(f"""cd {repo_dir}
-    git -P tag
-    """)
-    return tag_bytes.decode("utf-8").splitlines()
