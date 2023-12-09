@@ -6,19 +6,9 @@ from unittest import mock
 from click.testing import CliRunner
 
 import dorian.cli as cli
-from dorian.command import run_command
 from dorian.git import Git
 
 repo_dir = "./test_repo"
-
-
-def setup_test_repo():
-    run_command(f"""
-    rm -rf {repo_dir}
-    mkdir -p {repo_dir}
-    cd {repo_dir}
-    git init
-    """)
 
 
 def test_cli():
@@ -26,9 +16,9 @@ def test_cli():
     deploy_1_time = datetime.now().replace(hour=0, microsecond=0)
     batch_2_start_time = deploy_1_time + timedelta(hours=1)
     deploy_2_time = datetime.now().replace(hour=0, microsecond=0) + timedelta(days=1)
-    setup_test_repo()
-
     git = Git(repo_dir=repo_dir)
+    git.init()
+
     with mock.patch.object(cli.Git, "clone") as clone:
         clone.return_value = git
         git.commit(batch_1_start_time, f"Batch 1 commit 1")
