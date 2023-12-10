@@ -11,7 +11,47 @@ from dorian.git import Git
 repo_dir = "./test_repo"
 
 
-def test_cli():
+def test_with_no_commits():
+    git = Git(repo_dir=repo_dir)
+    git.init()
+
+    with mock.patch.object(cli.Git, "clone") as clone:
+        clone.return_value = git
+        runner = CliRunner()
+        result = runner.invoke(cli.cli, ["git@github.com:uttamk/dorian.git"])
+
+    assert result.exit_code == 0
+    assert Path('dora.csv').is_file()
+    with open(Path('dora.csv')) as f:
+        assert list(csv.DictReader(f)) == []
+
+
+def test_with_one_deployment():
+    batch_1_start_time = datetime.now().replace(hour=0, microsecond=0) - timedelta(days=1)
+    deploy_1_time = datetime.now().replace(hour=0, microsecond=0)
+    git = Git(repo_dir=repo_dir)
+    git.init()
+
+    with mock.patch.object(cli.Git, "clone") as clone:
+        clone.return_value = git
+        git.commit(batch_1_start_time, f"Batch 1 commit 1")
+        git.commit(batch_1_start_time + timedelta(hours=1), f"Batch 1 commit 2")
+        git.commit(batch_1_start_time + timedelta(hours=2), f"Batch 1 commit 3")
+        sha = git.commit(deploy_1_time, f"Batch 1 final commit")
+        git.create_tag(f'deploy-{deploy_1_time.strftime("%Y%m%d%H%M%S")}', sha)
+
+        runner = CliRunner()
+        result = runner.invoke(cli.cli, ["git@github.com:uttamk/dorian.git"])
+
+    assert result.exit_code == 0
+    assert Path('dora.csv').is_file()
+    with open(Path('dora.csv')) as f:
+        assert list(csv.DictReader(f)) == [
+            dict(deployment_time=str(deploy_1_time.timestamp()), first_commit_time=''),
+        ]
+
+
+def test_with_two_deployments():
     batch_1_start_time = datetime.now().replace(hour=0, microsecond=0) - timedelta(days=1)
     deploy_1_time = datetime.now().replace(hour=0, microsecond=0)
     batch_2_start_time = deploy_1_time + timedelta(hours=1)
