@@ -24,20 +24,25 @@ def _deployment_time(tag: str):
                     second=int(date_str[12:14]))
 
 
-def _first_commit_time(idx: int, git: Git) -> datetime or None:
-    if idx == 0:
+def _first_commit_time(idx: int, git: Git, seen_shas: list[str]) -> datetime or None:
+    current_deployment_sha = git.rev_parse(git.tags()[idx])
+    if idx == 0 or current_deployment_sha in seen_shas:
+        seen_shas.append(current_deployment_sha)
         return None
-    prev_tag = git.tags()[idx - 1]
-    prev_deployment_sha = git.rev_parse(prev_tag)
+    seen_shas.append(current_deployment_sha)
+    prev_deployment_sha = git.rev_parse(git.tags()[idx - 1])
     next_sha = git.next_sha(prev_deployment_sha)
-    return git.commit_time(next_sha)
+    return git.commit_time(next_sha) if next_sha else None
 
 
 def extract(git: Git) -> list[DeploymentTime]:
+    seen_shas = []
+    tags = git.tags()
+    tags.sort()
     return [
         DeploymentTime(deployment_time=_deployment_time(tag),
-                       first_commit_time=_first_commit_time(idx, git))
-        for idx, tag in enumerate(git.tags())
+                       first_commit_time=_first_commit_time(idx, git, seen_shas))
+        for idx, tag in enumerate(tags)
     ]
 
 

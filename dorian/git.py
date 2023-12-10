@@ -50,10 +50,11 @@ class Git(object):
         return _run_command(f"""cd {self.repo_dir}
         git rev-parse {ref}""")
 
-    def next_sha(self, prev_sha: str):
-        return _run_command(f"""cd {self.repo_dir}
+    def next_sha(self, prev_sha: str) -> str or None:
+        result = _run_command(f"""cd {self.repo_dir}
             git rev-list {prev_sha}..HEAD --reverse
-        """).splitlines()[0]
+        """).splitlines()
+        return result[0] if result else None
 
     def commit_time(self, sha: str):
         date_str = _run_command(f"""cd {self.repo_dir}
