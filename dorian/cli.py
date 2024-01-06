@@ -11,6 +11,7 @@ from dorian.git import Git
 class DeploymentTime:
     deployment_time: datetime
     first_commit_time: datetime
+    commit_sha: str
 
 
 def _deployment_time(tag: str):
@@ -35,12 +36,17 @@ def _first_commit_time(idx: int, git: Git, seen_shas: list[str]) -> datetime or 
     return git.commit_time(next_sha) if next_sha else None
 
 
+def _commit_sha(git: Git, tag: str) -> str:
+    return git.rev_parse(tag)
+
+
 def extract(git: Git) -> list[DeploymentTime]:
     seen_shas = []
     tags = git.tags()
     tags.sort()
     return [
         DeploymentTime(deployment_time=_deployment_time(tag),
+                       commit_sha=_commit_sha(git, tag),
                        first_commit_time=_first_commit_time(idx, git, seen_shas))
         for idx, tag in enumerate(tags)
     ]
@@ -49,10 +55,16 @@ def extract(git: Git) -> list[DeploymentTime]:
 def write(deployment_times: list[DeploymentTime], output_file):
     with open(output_file, 'w') as f:
         writer = csv.writer(f)
-        writer.writerow(['deployment_time', 'first_commit_time'])
+        writer.writerow(['deployment_time', 'first_commit_time', 'commit_sha'])
         writer.writerows(
-            [(dt.deployment_time.timestamp(), dt.first_commit_time.timestamp() if dt.first_commit_time else None) for dt
-             in deployment_times])
+            [
+                (
+                    dt.deployment_time.timestamp(),
+                    dt.first_commit_time.timestamp() if dt.first_commit_time else None,
+                    dt.commit_sha,
+                ) for dt in deployment_times
+            ]
+        )
         click.echo('Metrics written to {}'.format(output_file))
 
 
