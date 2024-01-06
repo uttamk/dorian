@@ -58,7 +58,7 @@ class Git(object):
 
     def commit_time(self, sha: str):
         date_str = _run_command(f"""cd {self.repo_dir}
-         git -P show --no-patch --format=%ci {sha}""")
+         git -P show --no-patch --format=%ai {sha}""")
         return datetime.strptime(date_str, "%Y-%m-%d %H:%M:%S %z")
 
     @classmethod
