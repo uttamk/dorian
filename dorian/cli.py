@@ -1,6 +1,6 @@
 import csv
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 
 import click
 
@@ -21,7 +21,7 @@ def _deployment_time(tag: str):
                     day=int(date_str[6:8]),
                     hour=int(date_str[8:10]),
                     minute=int(date_str[10:12]),
-                    second=int(date_str[12:14]))
+                    second=int(date_str[12:14]), tzinfo=timezone.utc)
 
 
 def _first_commit_time(idx: int, git: Git, seen_shas: list[str]) -> datetime or None:

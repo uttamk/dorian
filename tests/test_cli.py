@@ -1,5 +1,5 @@
 import csv
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from unittest import mock
 
@@ -52,7 +52,7 @@ def test_with_one_deployment():
 
 
 def _deploy_tag(deploy_datetime):
-    return f'deploy-{deploy_datetime.strftime("%Y%m%d%H%M%S")}'
+    return f'deploy-{deploy_datetime.astimezone(timezone.utc).strftime("%Y%m%d%H%M%S")}'
 
 
 def test_with_two_deployments():
