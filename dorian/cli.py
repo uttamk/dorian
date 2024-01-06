@@ -57,10 +57,10 @@ def write(deployment_times: list[DeploymentTime], output_file):
 
 
 @click.command()
-@click.argument("repo_url", required=True)
+@click.argument("target", required=True)
 @click.argument("output_file", required=False, default="dora.csv")
-def cli(repo_url, output_file):
-    git = Git.clone(repo_url)
+def cli(target, output_file):
+    git = Git.clone(target) if ".git" in target else Git(repo_dir=target)
     deployment_times = extract(git)
     write(deployment_times, output_file)
 
