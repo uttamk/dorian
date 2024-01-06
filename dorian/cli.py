@@ -11,7 +11,7 @@ from dorian.git import Git
 class DeploymentTime:
     deployment_time: datetime
     first_commit_time: datetime
-    commit_sha: str
+    deploy_sha: str
 
 
 def _deployment_time(tag: str):
@@ -46,7 +46,7 @@ def extract(git: Git) -> list[DeploymentTime]:
     tags.sort()
     return [
         DeploymentTime(deployment_time=_deployment_time(tag),
-                       commit_sha=_commit_sha(git, tag),
+                       deploy_sha=_commit_sha(git, tag),
                        first_commit_time=_first_commit_time(idx, git, seen_shas))
         for idx, tag in enumerate(tags)
     ]
@@ -55,13 +55,13 @@ def extract(git: Git) -> list[DeploymentTime]:
 def write(deployment_times: list[DeploymentTime], output_file):
     with open(output_file, 'w') as f:
         writer = csv.writer(f)
-        writer.writerow(['deployment_time', 'first_commit_time', 'commit_sha'])
+        writer.writerow(['deployment_time', 'first_commit_time', 'deploy_sha'])
         writer.writerows(
             [
                 (
                     dt.deployment_time.timestamp(),
                     dt.first_commit_time.timestamp() if dt.first_commit_time else None,
-                    dt.commit_sha,
+                    dt.deploy_sha,
                 ) for dt in deployment_times
             ]
         )
