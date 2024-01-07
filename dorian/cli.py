@@ -9,8 +9,8 @@ from dorian.git import Git
 
 @dataclass
 class DeploymentTime:
-    deployment_time: datetime
-    first_commit_time: datetime
+    deployment_timestamp: datetime
+    first_commit_timestamp: datetime
     first_commit_sha: str
     deploy_sha: str
 
@@ -48,22 +48,22 @@ def extract(git: Git) -> list[DeploymentTime]:
     deployment_times = []
     for idx, tag in enumerate(tags):
         first_commit_time, first_commit_sha = _first_commit_data(idx, git, seen_shas)
-        deployment_times.append(DeploymentTime(deployment_time=_deployment_time(tag),
+        deployment_times.append(DeploymentTime(deployment_timestamp=_deployment_time(tag),
                                                deploy_sha=_commit_sha(git, tag),
                                                first_commit_sha=first_commit_sha,
-                                               first_commit_time=first_commit_time))
+                                               first_commit_timestamp=first_commit_time))
     return deployment_times
 
 
 def write(deployment_times: list[DeploymentTime], output_file):
     with open(output_file, 'w') as f:
         writer = csv.writer(f)
-        writer.writerow(['deployment_time', 'first_commit_time', 'deploy_sha', 'first_commit_sha'])
+        writer.writerow(['deployment_timestamp', 'first_commit_timestamp', 'deploy_sha', 'first_commit_sha'])
         writer.writerows(
             [
                 (
-                    dt.deployment_time.timestamp(),
-                    dt.first_commit_time.timestamp() if dt.first_commit_time else None,
+                    dt.deployment_timestamp.timestamp(),
+                    dt.first_commit_timestamp.timestamp() if dt.first_commit_timestamp else None,
                     dt.deploy_sha,
                     dt.first_commit_sha,
                 ) for dt in deployment_times

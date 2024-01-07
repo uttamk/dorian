@@ -48,8 +48,8 @@ def test_with_one_deployment():
     with open(Path('dora.csv')) as f:
         assert list(csv.DictReader(f)) == [
             dict(
-                deployment_time=str(deploy_1_time.timestamp()),
-                first_commit_time='',
+                deployment_timestamp=str(deploy_1_time.timestamp()),
+                first_commit_timestamp='',
                 deploy_sha=deploy_sha,
                 first_commit_sha=''
             ),
@@ -88,14 +88,14 @@ def test_with_two_deployments():
     with open(Path('dora.csv')) as f:
         assert list(csv.DictReader(f)) == [
             dict(
-                deployment_time=str(deploy_1_time.timestamp()),
-                first_commit_time='',
+                deployment_timestamp=str(deploy_1_time.timestamp()),
+                first_commit_timestamp='',
                 first_commit_sha='',
                 deploy_sha=deploy_1_sha
             ),
             dict(
-                deployment_time=str(deploy_2_time.timestamp()),
-                first_commit_time=str(batch_2_start_time.timestamp()),
+                deployment_timestamp=str(deploy_2_time.timestamp()),
+                first_commit_timestamp=str(batch_2_start_time.timestamp()),
                 deploy_sha=deploy_2_sha,
                 first_commit_sha=first_commit_sha
             ),
@@ -136,20 +136,20 @@ def test_with_rollback():
     assert Path('dora.csv').is_file()
     with open(Path('dora.csv')) as f:
         assert list(csv.DictReader(f)) == [
-            dict(deployment_time=str(deploy_1_time.timestamp()),
-                 first_commit_time='',
+            dict(deployment_timestamp=str(deploy_1_time.timestamp()),
+                 first_commit_timestamp='',
                  first_commit_sha='',
                  deploy_sha=deploy_1_sha),
-            dict(deployment_time=str(deploy_2_time.timestamp()),
-                 first_commit_time=str(batch_2_start_time.timestamp()),
+            dict(deployment_timestamp=str(deploy_2_time.timestamp()),
+                 first_commit_timestamp=str(batch_2_start_time.timestamp()),
                  first_commit_sha=batch_2_first_sha,
                  deploy_sha=deploy_2_sha),
-            dict(deployment_time=str(rollback_time.timestamp()),
-                 first_commit_time='',
+            dict(deployment_timestamp=str(rollback_time.timestamp()),
+                 first_commit_timestamp='',
                  first_commit_sha='',
                  deploy_sha=deploy_1_sha),
-            dict(deployment_time=str(deploy_3_time.timestamp()),
-                 first_commit_time=str(batch_2_start_time.timestamp()),
+            dict(deployment_timestamp=str(deploy_3_time.timestamp()),
+                 first_commit_timestamp=str(batch_2_start_time.timestamp()),
                  first_commit_sha=batch_2_first_sha,
                  deploy_sha=deploy_3_sha),
         ]
