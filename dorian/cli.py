@@ -11,6 +11,7 @@ from dorian.git import Git
 class DeploymentTime:
     deployment_time: datetime
     first_commit_time: datetime
+    first_commit_sha: str
     deploy_sha: str
 
 
@@ -25,15 +26,15 @@ def _deployment_time(tag: str):
                     second=int(date_str[12:14]), tzinfo=timezone.utc)
 
 
-def _first_commit_time(idx: int, git: Git, seen_shas: list[str]) -> datetime or None:
+def _first_commit_data(idx: int, git: Git, seen_shas: list[str]) -> tuple[datetime, str] or None:
     current_deployment_sha = git.rev_parse(git.tags()[idx])
     if idx == 0 or current_deployment_sha in seen_shas:
         seen_shas.append(current_deployment_sha)
-        return None
+        return None, None
     seen_shas.append(current_deployment_sha)
     prev_deployment_sha = git.rev_parse(git.tags()[idx - 1])
     next_sha = git.next_sha(prev_deployment_sha)
-    return git.commit_time(next_sha) if next_sha else None
+    return (git.commit_time(next_sha), next_sha) if next_sha else (None, None)
 
 
 def _commit_sha(git: Git, tag: str) -> str:
@@ -44,24 +45,27 @@ def extract(git: Git) -> list[DeploymentTime]:
     seen_shas = []
     tags = git.tags()
     tags.sort()
-    return [
-        DeploymentTime(deployment_time=_deployment_time(tag),
-                       deploy_sha=_commit_sha(git, tag),
-                       first_commit_time=_first_commit_time(idx, git, seen_shas))
-        for idx, tag in enumerate(tags)
-    ]
+    deployment_times = []
+    for idx, tag in enumerate(tags):
+        first_commit_time, first_commit_sha = _first_commit_data(idx, git, seen_shas)
+        deployment_times.append(DeploymentTime(deployment_time=_deployment_time(tag),
+                                               deploy_sha=_commit_sha(git, tag),
+                                               first_commit_sha=first_commit_sha,
+                                               first_commit_time=first_commit_time))
+    return deployment_times
 
 
 def write(deployment_times: list[DeploymentTime], output_file):
     with open(output_file, 'w') as f:
         writer = csv.writer(f)
-        writer.writerow(['deployment_time', 'first_commit_time', 'deploy_sha'])
+        writer.writerow(['deployment_time', 'first_commit_time', 'deploy_sha', 'first_commit_sha'])
         writer.writerows(
             [
                 (
                     dt.deployment_time.timestamp(),
                     dt.first_commit_time.timestamp() if dt.first_commit_time else None,
                     dt.deploy_sha,
+                    dt.first_commit_sha,
                 ) for dt in deployment_times
             ]
         )

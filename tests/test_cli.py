@@ -37,8 +37,8 @@ def test_with_one_deployment():
         git.commit(batch_1_start_time, f"Batch 1 commit 1")
         git.commit(batch_1_start_time + timedelta(hours=1), f"Batch 1 commit 2")
         git.commit(batch_1_start_time + timedelta(hours=2), f"Batch 1 commit 3")
-        sha = git.commit(deploy_1_time, f"Batch 1 final commit")
-        git.create_tag(_deploy_tag(deploy_1_time), sha)
+        deploy_sha = git.commit(deploy_1_time, f"Batch 1 final commit")
+        git.create_tag(_deploy_tag(deploy_1_time), deploy_sha)
 
         runner = CliRunner()
         result = runner.invoke(cli.cli, ["git@github.com:uttamk/dorian.git"])
@@ -50,7 +50,8 @@ def test_with_one_deployment():
             dict(
                 deployment_time=str(deploy_1_time.timestamp()),
                 first_commit_time='',
-                deploy_sha=sha
+                deploy_sha=deploy_sha,
+                first_commit_sha=''
             ),
         ]
 
@@ -74,7 +75,7 @@ def test_with_two_deployments():
         git.commit(batch_1_start_time + timedelta(hours=2), f"Batch 1 commit 3")
         deploy_1_sha = git.commit(deploy_1_time, f"Batch 1 final commit")
         git.create_tag(_deploy_tag(deploy_1_time), deploy_1_sha)
-        git.commit(batch_2_start_time, f"Batch 2 commit 1")
+        first_commit_sha = git.commit(batch_2_start_time, f"Batch 2 commit 1")
         git.commit(deploy_1_time + timedelta(hours=2), f"Batch 2 commit 2")
         deploy_2_sha = git.commit(deploy_2_time, f"Batch 2 final commit")
         git.create_tag(_deploy_tag(deploy_2_time), deploy_2_sha)
@@ -89,12 +90,14 @@ def test_with_two_deployments():
             dict(
                 deployment_time=str(deploy_1_time.timestamp()),
                 first_commit_time='',
+                first_commit_sha='',
                 deploy_sha=deploy_1_sha
             ),
             dict(
                 deployment_time=str(deploy_2_time.timestamp()),
                 first_commit_time=str(batch_2_start_time.timestamp()),
-                deploy_sha=deploy_2_sha
+                deploy_sha=deploy_2_sha,
+                first_commit_sha=first_commit_sha
             ),
         ]
 
@@ -117,13 +120,13 @@ def test_with_rollback():
         git.commit(batch_1_start_time + timedelta(hours=2), f"Batch 1 commit 3")
         deploy_1_sha = git.commit(deploy_1_time, f"Batch 1 final commit")
         git.create_tag(_deploy_tag(deploy_1_time), deploy_1_sha)
-        git.commit(batch_2_start_time, f"Batch 2 commit 1")
+        batch_2_first_sha = git.commit(batch_2_start_time, f"Batch 2 commit 1")
         git.commit(deploy_1_time + timedelta(hours=2), f"Batch 2 commit 2")
         deploy_2_sha = git.commit(deploy_2_time, f"Batch 2 final commit")
         git.create_tag(_deploy_tag(deploy_2_time), deploy_2_sha)
         git.create_tag(_deploy_tag(rollback_time), deploy_1_sha)
-        git.commit(batch_3_start_time + timedelta(hours=1), f"Batch 3 commit 2")
-        deploy_3_sha = git.commit(batch_3_start_time + timedelta(hours=2), f"Batch 3 commit 3")
+        git.commit(batch_3_start_time + timedelta(hours=1), f"Batch 3 commit 1")
+        deploy_3_sha = git.commit(batch_3_start_time + timedelta(hours=2), f"Batch 3 commit 1")
         git.create_tag(_deploy_tag(deploy_3_time), deploy_3_sha)
 
         runner = CliRunner()
@@ -133,11 +136,20 @@ def test_with_rollback():
     assert Path('dora.csv').is_file()
     with open(Path('dora.csv')) as f:
         assert list(csv.DictReader(f)) == [
-            dict(deployment_time=str(deploy_1_time.timestamp()), first_commit_time='', deploy_sha=deploy_1_sha),
+            dict(deployment_time=str(deploy_1_time.timestamp()),
+                 first_commit_time='',
+                 first_commit_sha='',
+                 deploy_sha=deploy_1_sha),
             dict(deployment_time=str(deploy_2_time.timestamp()),
-                 first_commit_time=str(batch_2_start_time.timestamp()), deploy_sha=deploy_2_sha),
+                 first_commit_time=str(batch_2_start_time.timestamp()),
+                 first_commit_sha=batch_2_first_sha,
+                 deploy_sha=deploy_2_sha),
             dict(deployment_time=str(rollback_time.timestamp()),
-                 first_commit_time='', deploy_sha=deploy_1_sha),
+                 first_commit_time='',
+                 first_commit_sha='',
+                 deploy_sha=deploy_1_sha),
             dict(deployment_time=str(deploy_3_time.timestamp()),
-                 first_commit_time=str(batch_2_start_time.timestamp()), deploy_sha=deploy_3_sha),
+                 first_commit_time=str(batch_2_start_time.timestamp()),
+                 first_commit_sha=batch_2_first_sha,
+                 deploy_sha=deploy_3_sha),
         ]
