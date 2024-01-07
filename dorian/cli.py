@@ -74,13 +74,13 @@ def write(deployment_times: list[DeploymentTime], output_file):
 
 @click.command(help="""Analyse a git repo (target) for deployment times and first commits
 
-                TARGET is a git repo directory or url
+                REPO_DIR is a git repo directory
 
-                OUTPUT_FILE is optional. It is dora.csv by default, it""")
-@click.argument("target", required=True)
+                OUTPUT_FILE is optional. It is dora.csv by default""")
+@click.argument("repo_dir", required=True)
 @click.argument("output_file", required=False, default="dora.csv")
-def cli(target, output_file):
-    git = Git.clone(target) if ".git" in target else Git(repo_dir=target)
+def cli(repo_dir, output_file):
+    git = Git(repo_dir=repo_dir)
     deployment_times = extract(git)
     write(deployment_times, output_file)
 
