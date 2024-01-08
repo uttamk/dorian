@@ -1,4 +1,4 @@
-name: 'Dorian'
+name: 'Build'
 on: [ push ]
 
 jobs:

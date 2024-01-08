@@ -1,3 +1,5 @@
+![Main build](https://github.com/uttamk/dorian/actions/workflows/build.yml/badge.svg?branch=main)
+
 #### What is Dorian?
 
 Dorian is a command line app that analyses your git repository and outputs the deployment time and the first commit time
