@@ -25,5 +25,5 @@ jobs:
       - name: Setup git
         run: git config --global user.email "foo@bar.com" && git config --global user.name "Foobar"
       - name: Run tests
-        run: poetry run pytest --cov=dorian
+        run: poetry run pytest --cov=dorian --cov-fail-under=100
 
